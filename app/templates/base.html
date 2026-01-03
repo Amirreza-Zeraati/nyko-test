@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ADHD Screening System{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ADHD Clinical Screening Expert System</h1>
+            <p class="subtitle">Evidence-Based Differential Assessment Tool</p>
+        </header>
+        
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+        
+        <footer>
+            <p class="disclaimer">
+                <strong>Medical Disclaimer:</strong> This tool is for screening and educational 
+                purposes only and does not constitute medical advice, diagnosis, or treatment. 
+                Please consult a qualified healthcare provider for proper evaluation.
+            </p>
+        </footer>
+    </div>
+    
+    <script src="/static/js/main.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
