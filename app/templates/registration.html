@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Registration{% endblock %}
+{% block content %}
+<h2>Getting Started</h2>
+<form id="regForm" onsubmit="submitReg(event)">
+    <label>First Name: <input type="text" id="firstName" required></label><br>
+    <label>Last Name: <input type="text" id="lastName" required></label><br>
+    <label>Age: <input type="number" id="age" min="18" required></label><br>
+    <button type="submit">Continue</button>
+</form>
+<script>
+async function submitReg(e) {
+    e.preventDefault();
+    const res = await fetch('/api/registration/start', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({first_name: firstName.value, last_name: lastName.value, age: parseInt(age.value)})
+    });
+    const data = await res.json();
+    location.href = `/questionnaire?session_id=${data.session_id}`;
+}
+</script>
+{% endblock %}
