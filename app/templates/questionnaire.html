@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="progressBar" style="width:0%;height:20px;background:blue"></div>
+<h2 id="title">Loading...</h2>
+<form id="qForm">
+    <div id="questions"></div>
+    <button type="button" id="prev" style="display:none">Prev</button>
+    <button type="button" id="next">Next</button>
+</form>
+<script>
+let page=1,sid=new URLSearchParams(location.search).get('session_id'),ans={};
+async function load(p){let r=await(await fetch(`/api/questionnaire/page/${p}?session_id=${sid}`)).json();title.textContent=r.title;questions.innerHTML=r.questions.map(q=>`<div><p>${q.text}</p>${[0,1,2,3,4].map(i=>`<label><input type="radio" name="${q.id}" value="${i}">${['Never','Rarely','Sometimes','Often','Very'][i]}</label>`).join('')}</div>`).join('');progressBar.style.width=(p/5*100)+'%';prev.style.display=p>1?'':'none';next.textContent=p==5?'Results':'Next';}
+next.onclick=async()=>{new FormData(qForm).forEach((v,k)=>ans[k]=+v);if(page==5){await fetch(`/api/questionnaire/submit?session_id=${sid}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ans)});location.href=`/api/evaluation/result?session_id=${sid}`}else load(++page)};
+prev.onclick=()=>load(--page);load(1);
+</script>
+{% endblock %}

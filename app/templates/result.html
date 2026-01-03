@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Your Results</h2>
+<div id="results">Loading...</div>
+<script>
+(async()=>{
+let sid=new URLSearchParams(location.search).get('session_id');
+let d=await(await fetch(`/api/evaluation/analyze?session_id=${sid}`,{method:'POST'})).json();
+results.innerHTML=`
+<h3>Pattern: ${d.pattern_description}</h3>
+<div><h4>ADHD: ${Math.round(d.adhd_likelihood.likelihood*100)}%</h4><p>${d.adhd_likelihood.clinical_interpretation}</p></div>
+<div><h4>Depression: ${Math.round(d.depression_likelihood.likelihood*100)}%</h4><p>${d.depression_likelihood.clinical_interpretation}</p></div>
+<div><h4>Anxiety: ${Math.round(d.anxiety_likelihood.likelihood*100)}%</h4><p>${d.anxiety_likelihood.clinical_interpretation}</p></div>
+<h3>Recommendations</h3>
+${d.recommendations.map(r=>`<div><h4>${r.title}</h4><p>${r.description}</p></div>`).join('')}
+<div><p>${d.disclaimer}</p></div>
+`;
+})();
+</script>
+{% endblock %}
