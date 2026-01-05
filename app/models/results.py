@@ -1,47 +1,8 @@
 """Evaluation result models."""
 
 from pydantic import BaseModel, Field
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from enum import Enum
-
-class DiagnosticCategory(str, Enum):
-    """Primary diagnostic categories."""
-    ADHD_PREDOMINANTLY_INATTENTIVE = "adhd_predominantly_inattentive"
-    ADHD_PREDOMINANTLY_HYPERACTIVE = "adhd_predominantly_hyperactive"
-    ADHD_COMBINED = "adhd_combined"
-    DEPRESSION_PRIMARY = "depression_primary"
-    ANXIETY_PRIMARY = "anxiety_primary"
-    COMORBID_ADHD_DEPRESSION = "comorbid_adhd_depression"
-    COMORBID_ADHD_ANXIETY = "comorbid_adhd_anxiety"
-    COMPLEX_COMORBIDITY = "complex_comorbidity"
-    SUBCLINICAL = "subclinical"
-    INCONCLUSIVE = "inconclusive"
-
-class ConfidenceLevel(str, Enum):
-    """Confidence in diagnostic assessment."""
-    HIGH = "high"
-    MODERATE = "moderate"
-    LOW = "low"
-    VERY_LOW = "very_low"
-
-class DiagnosticProfile(BaseModel):
-    """Individual diagnostic profile with probability."""
-    category: DiagnosticCategory
-    probability: float = Field(..., ge=0.0, le=1.0)
-    confidence: ConfidenceLevel
-    supporting_evidence: List[str]
-    contradicting_evidence: List[str]
-
-class ClinicalReasoning(BaseModel):
-    """Expert system reasoning explanation."""
-    primary_pattern: str
-    differential_considerations: List[str]
-    key_discriminating_features: List[str]
-    developmental_context: Optional[str] = None
-    chronicity_analysis: Optional[str] = None
-    functional_impact: Optional[str] = None
-    red_flags: List[str] = Field(default_factory=list)
-    limitations: List[str] = Field(default_factory=list)
 
 class ScaleScores(BaseModel):
     """Validated scale scores."""
@@ -53,27 +14,40 @@ class ScaleScores(BaseModel):
     gad7_total: Optional[float] = None
     gad7_severity: Optional[str] = None
 
+class DiagnosticLikelihood(BaseModel):
+    """Probabilistic assessment for a specific condition."""
+    likelihood: float
+    confidence: str
+    key_factors: List[str]
+    clinical_interpretation: str
+
+class ClinicalRecommendation(BaseModel):
+    """Actionable clinical recommendation."""
+    priority: str
+    category: str
+    title: str
+    description: str
+    rationale: str
+
 class EvaluationResult(BaseModel):
-    """Complete evaluation result."""
-    session_id: str
-    primary_diagnosis: DiagnosticProfile
-    differential_diagnoses: List[DiagnosticProfile]
-    clinical_reasoning: ClinicalReasoning
+    """Complete evaluation result matching ExpertSystem output."""
     scale_scores: ScaleScores
-    recommendations: List[str]
+    adhd_likelihood: DiagnosticLikelihood
+    depression_likelihood: DiagnosticLikelihood
+    anxiety_likelihood: DiagnosticLikelihood
+    primary_pattern: str
+    pattern_description: str
+    clinical_reasoning: str
+    recommendations: List[ClinicalRecommendation]
     disclaimer: str
-    timestamp: str
-    
+    session_id: Optional[str] = None
+    timestamp: Optional[str] = None
+
     class Config:
         json_schema_extra = {
             "example": {
-                "session_id": "abc123",
-                "primary_diagnosis": {
-                    "category": "adhd_combined",
-                    "probability": 0.78,
-                    "confidence": "moderate",
-                    "supporting_evidence": ["Childhood onset symptoms"],
-                    "contradicting_evidence": []
-                }
+                "primary_pattern": "adhd_predominant",
+                "pattern_description": "Symptoms consistent with ADHD",
+                "recommendations": []
             }
         }
