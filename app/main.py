@@ -1,13 +1,22 @@
 """FastAPI main application entry point."""
 
+import logging
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
 from app.routes import registration, questionnaire, evaluation
 from app.services.session_manager import SessionManager
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Initialize session manager
 session_manager = SessionManager()
@@ -16,9 +25,12 @@ session_manager = SessionManager()
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     # Startup
+    logger.info("Starting ADHD Screening Expert System")
     await session_manager.initialize()
+    logger.info("Session manager initialized")
     yield
     # Shutdown
+    logger.info("Shutting down application")
     await session_manager.cleanup()
 
 # Initialize FastAPI app
@@ -38,16 +50,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Global exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error: {str(exc)}"}
+    )
+
 # Templates
 templates = Jinja2Templates(directory="app/templates")
 
-# Mount static files AFTER defining routes to avoid conflicts
-# We'll mount it at the end
-
 # Include API routers
+logger.info("Loading API routes")
 app.include_router(registration.router, prefix="/api", tags=["registration"])
 app.include_router(questionnaire.router, prefix="/api", tags=["questionnaire"])
 app.include_router(evaluation.router, prefix="/api", tags=["evaluation"])
+logger.info("API routes loaded successfully")
 
 # Frontend page routes (HTML templates)
 @app.get("/")
@@ -89,3 +109,5 @@ async def health_check():
 
 # Mount static files at the end
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+logger.info("Application startup complete")
