@@ -38,17 +38,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
 # Templates
 templates = Jinja2Templates(directory="app/templates")
 
-# Include routers
+# Mount static files AFTER defining routes to avoid conflicts
+# We'll mount it at the end
+
+# Include API routers
 app.include_router(registration.router, prefix="/api", tags=["registration"])
 app.include_router(questionnaire.router, prefix="/api", tags=["questionnaire"])
 app.include_router(evaluation.router, prefix="/api", tags=["evaluation"])
 
+# Frontend page routes (HTML templates)
 @app.get("/")
 async def root(request: Request):
     """Root endpoint - welcome page."""
@@ -57,7 +58,34 @@ async def root(request: Request):
         {"request": request}
     )
 
+@app.get("/registration")
+async def registration_page(request: Request):
+    """Registration form page."""
+    return templates.TemplateResponse(
+        "registration.html",
+        {"request": request}
+    )
+
+@app.get("/questionnaire")
+async def questionnaire_page(request: Request):
+    """Questionnaire page."""
+    return templates.TemplateResponse(
+        "questionnaire.html",
+        {"request": request}
+    )
+
+@app.get("/results")
+async def results_page(request: Request):
+    """Results page."""
+    return templates.TemplateResponse(
+        "result.html",
+        {"request": request}
+    )
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "version": "1.0.0"}
+
+# Mount static files at the end
+app.mount("/static", StaticFiles(directory="static"), name="static")

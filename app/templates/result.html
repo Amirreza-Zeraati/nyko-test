@@ -1,20 +1,75 @@
 {% extends "base.html" %}
+{% block title %}Results{% endblock %}
 {% block content %}
-<h2>Your Results</h2>
-<div id="results">Loading...</div>
+<div class="results-container">
+    <h2>Your Screening Results</h2>
+    <div id="results">Loading analysis...</div>
+    <div id="actions" style="display:none;margin-top:20px;">
+        <button class="btn btn-primary" onclick="window.print()">Print Results</button>
+        <a href="/" class="btn btn-secondary">Start New Screening</a>
+    </div>
+</div>
 <script>
 (async()=>{
-let sid=new URLSearchParams(location.search).get('session_id');
-let d=await(await fetch(`/api/evaluation/analyze?session_id=${sid}`,{method:'POST'})).json();
-results.innerHTML=`
-<h3>Pattern: ${d.pattern_description}</h3>
-<div><h4>ADHD: ${Math.round(d.adhd_likelihood.likelihood*100)}%</h4><p>${d.adhd_likelihood.clinical_interpretation}</p></div>
-<div><h4>Depression: ${Math.round(d.depression_likelihood.likelihood*100)}%</h4><p>${d.depression_likelihood.clinical_interpretation}</p></div>
-<div><h4>Anxiety: ${Math.round(d.anxiety_likelihood.likelihood*100)}%</h4><p>${d.anxiety_likelihood.clinical_interpretation}</p></div>
-<h3>Recommendations</h3>
-${d.recommendations.map(r=>`<div><h4>${r.title}</h4><p>${r.description}</p></div>`).join('')}
-<div><p>${d.disclaimer}</p></div>
-`;
+    const sid=new URLSearchParams(location.search).get('session_id');
+    if(!sid){alert('Session not found');location.href='/';return;}
+    try{
+        const r=await fetch(`/api/evaluation/analyze?session_id=${sid}`,{method:'POST'});
+        if(!r.ok) throw new Error('Analysis failed');
+        const d=await r.json();
+        document.getElementById('results').innerHTML=`
+            <div class="result-section">
+                <h3>Overall Pattern</h3>
+                <p><strong>${d.pattern_description}</strong></p>
+            </div>
+            <div class="result-section">
+                <h3>Likelihood Assessment</h3>
+                <div class="likelihood-grid">
+                    <div class="likelihood-card adhd">
+                        <h4>ADHD</h4>
+                        <div class="likelihood-meter"><div class="meter-fill" style="width:${d.adhd_likelihood.likelihood*100}%"></div></div>
+                        <p class="likelihood-value">${Math.round(d.adhd_likelihood.likelihood*100)}%</p>
+                        <p>${d.adhd_likelihood.clinical_interpretation}</p>
+                    </div>
+                    <div class="likelihood-card depression">
+                        <h4>Depression</h4>
+                        <div class="likelihood-meter"><div class="meter-fill" style="width:${d.depression_likelihood.likelihood*100}%"></div></div>
+                        <p class="likelihood-value">${Math.round(d.depression_likelihood.likelihood*100)}%</p>
+                        <p>${d.depression_likelihood.clinical_interpretation}</p>
+                    </div>
+                    <div class="likelihood-card anxiety">
+                        <h4>Anxiety</h4>
+                        <div class="likelihood-meter"><div class="meter-fill" style="width:${d.anxiety_likelihood.likelihood*100}%"></div></div>
+                        <p class="likelihood-value">${Math.round(d.anxiety_likelihood.likelihood*100)}%</p>
+                        <p>${d.anxiety_likelihood.clinical_interpretation}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="result-section">
+                <h3>Scale Scores</h3>
+                <ul>
+                    <li><strong>ASRS (ADHD):</strong> ${d.scale_scores.asrs_interpretation}</li>
+                    <li><strong>PHQ-9 (Depression):</strong> ${d.scale_scores.phq9_severity} (Score: ${d.scale_scores.phq9_total})</li>
+                    <li><strong>GAD-7 (Anxiety):</strong> ${d.scale_scores.gad7_severity} (Score: ${d.scale_scores.gad7_total})</li>
+                </ul>
+            </div>
+            <div class="result-section">
+                <h3>Clinical Reasoning</h3>
+                <div class="reasoning-content">${d.clinical_reasoning.replace(/\n/g,'<br>')}</div>
+            </div>
+            <div class="result-section">
+                <h3>Recommendations</h3>
+                ${d.recommendations.map(r=>`<div class="recommendation-card priority-${r.priority}"><h4>${r.title}</h4><p>${r.description}</p><p class="rationale"><em>${r.rationale}</em></p></div>`).join('')}
+            </div>
+            <div class="result-section disclaimer-section">
+                <h3>⚠️ Important Disclaimer</h3>
+                <p>${d.disclaimer}</p>
+            </div>
+        `;
+        document.getElementById('actions').style.display='block';
+    }catch(e){
+        document.getElementById('results').innerHTML=`<div class="error">Error loading results: ${e.message}</div>`;
+    }
 })();
 </script>
 {% endblock %}

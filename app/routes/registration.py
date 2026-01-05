@@ -1,35 +1,18 @@
 """User registration route."""
 
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.templating import Jinja2Templates
+from fastapi import APIRouter, HTTPException
 import uuid
+from datetime import datetime
 
 from app.models.user_models import UserInfo, SessionData
 from app.services.session_manager import SessionManager
 
 router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
 session_manager = SessionManager()
 
-@router.get("/register")
-async def get_registration_page(request: Request):
-    """Render registration form."""
-    return templates.TemplateResponse(
-        "registration.html",
-        {"request": request}
-    )
-
-@router.post("/register")
+@router.post("/registration/start")
 async def register_user(user_info: UserInfo):
-    """
-    Register a new user and create a session.
-    
-    This endpoint:
-    1. Validates user information
-    2. Creates a unique session ID
-    3. Initializes session data
-    4. Returns session ID for tracking
-    """
+    """Register a new user and create a session."""
     try:
         # Generate unique session ID
         session_id = str(uuid.uuid4())
@@ -38,7 +21,10 @@ async def register_user(user_info: UserInfo):
         session_data = SessionData(
             session_id=session_id,
             user_info=user_info,
-            current_page=0
+            current_page=0,
+            responses={},
+            completed=False,
+            created_at=datetime.utcnow().isoformat()
         )
         
         # Store session
@@ -47,8 +33,7 @@ async def register_user(user_info: UserInfo):
         return {
             "success": True,
             "session_id": session_id,
-            "message": "Registration successful",
-            "next_step": "/api/questionnaire/page/1"
+            "message": "Registration successful"
         }
         
     except Exception as e:

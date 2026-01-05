@@ -1,16 +1,79 @@
 {% extends "base.html" %}
+{% block title %}Questionnaire{% endblock %}
 {% block content %}
-<div id="progressBar" style="width:0%;height:20px;background:blue"></div>
-<h2 id="title">Loading...</h2>
-<form id="qForm">
-    <div id="questions"></div>
-    <button type="button" id="prev" style="display:none">Prev</button>
-    <button type="button" id="next">Next</button>
-</form>
+<div class="questionnaire-container">
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+        <span class="progress-text" id="progressText">Page 1 of 7</span>
+    </div>
+    <div class="question-card" id="questionCard">
+        <h2 id="sectionTitle">Loading...</h2>
+        <p id="sectionDescription"></p>
+        <form id="questionForm">
+            <div id="questionContainer"></div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="prevBtn" style="display:none;">Previous</button>
+                <button type="button" class="btn btn-primary" id="nextBtn">Next</button>
+            </div>
+        </form>
+    </div>
+</div>
 <script>
-let page=1,sid=new URLSearchParams(location.search).get('session_id'),ans={};
-async function load(p){let r=await(await fetch(`/api/questionnaire/page/${p}?session_id=${sid}`)).json();title.textContent=r.title;questions.innerHTML=r.questions.map(q=>`<div><p>${q.text}</p>${[0,1,2,3,4].map(i=>`<label><input type="radio" name="${q.id}" value="${i}">${['Never','Rarely','Sometimes','Often','Very'][i]}</label>`).join('')}</div>`).join('');progressBar.style.width=(p/5*100)+'%';prev.style.display=p>1?'':'none';next.textContent=p==5?'Results':'Next';}
-next.onclick=async()=>{new FormData(qForm).forEach((v,k)=>ans[k]=+v);if(page==5){await fetch(`/api/questionnaire/submit?session_id=${sid}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ans)});location.href=`/api/evaluation/result?session_id=${sid}`}else load(++page)};
-prev.onclick=()=>load(--page);load(1);
+let currentPage=1,totalPages=7,sessionId=new URLSearchParams(window.location.search).get('session_id'),responses={};
+if(!sessionId){alert('Session not found');window.location.href='/';}
+
+async function loadPage(n){
+    try{
+        const r=await fetch(`/api/questionnaire/page/${n}?session_id=${sessionId}`);
+        if(!r.ok) throw new Error('Failed to load page');
+        const d=await r.json();
+        document.getElementById('sectionTitle').textContent=d.title;
+        document.getElementById('sectionDescription').textContent=d.description||'';
+        const c=document.getElementById('questionContainer');
+        c.innerHTML='';
+        d.questions.forEach(q=>{
+            const div=document.createElement('div');
+            div.className='question-group';
+            div.innerHTML=`<label>${q.text}</label><div class="likert-scale">${[0,1,2,3,4].map(i=>`<label class="likert-option"><input type="radio" name="${q.id}" value="${i}" required><span>${['Never','Rarely','Sometimes','Often','Very Often'][i]}</span></label>`).join('')}</div>`;
+            c.appendChild(div);
+        });
+        document.getElementById('progressBar').style.width=`${(n/totalPages)*100}%`;
+        document.getElementById('progressText').textContent=`Page ${n} of ${totalPages}`;
+        document.getElementById('prevBtn').style.display=n>1?'inline-block':'none';
+        document.getElementById('nextBtn').textContent=n===totalPages?'Complete & View Results':'Next';
+    }catch(e){
+        alert('Error loading questions: '+e.message);
+    }
+}
+
+document.getElementById('nextBtn').addEventListener('click',async()=>{
+    const form=document.getElementById('questionForm');
+    if(!form.checkValidity()){form.reportValidity();return;}
+    new FormData(form).forEach((v,k)=>responses[k]=parseInt(v));
+    if(currentPage===totalPages){
+        try{
+            const r=await fetch(`/api/questionnaire/submit?session_id=${sessionId}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(responses)});
+            if(r.ok){
+                window.location.href=`/results?session_id=${sessionId}`;
+            }else{
+                alert('Failed to submit. Please try again.');
+            }
+        }catch(e){
+            alert('Error submitting: '+e.message);
+        }
+    }else{
+        currentPage++;
+        loadPage(currentPage);
+    }
+});
+
+document.getElementById('prevBtn').addEventListener('click',()=>{
+    if(currentPage>1){
+        currentPage--;
+        loadPage(currentPage);
+    }
+});
+
+loadPage(1);
 </script>
 {% endblock %}
