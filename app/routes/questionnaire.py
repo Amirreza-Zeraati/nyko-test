@@ -5,13 +5,12 @@ from typing import Dict, Any
 import logging
 
 from app.models.questionnaire import QuestionPage
-from app.services.session_manager import SessionManager
+from app.services.session_manager import session_manager
 from app.knowledge_base.questionnaire_builder import QuestionnaireBuilder
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-session_manager = SessionManager()
 
 # Initialize questionnaire builder with error handling
 try:
@@ -37,8 +36,10 @@ async def get_questionnaire_page(
             raise HTTPException(status_code=404, detail="Session not found. Please restart.")
         
         logger.info(f"Session found: {session_data.session_id}")
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error retrieving session: {e}")
+        logger.error(f"Error retrieving session: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Session error: {str(e)}")
     
     # Get page content

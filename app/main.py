@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
 from app.routes import registration, questionnaire, evaluation
-from app.services.session_manager import SessionManager
+from app.services.session_manager import session_manager
 
 # Configure logging
 logging.basicConfig(
@@ -17,9 +17,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
-# Initialize session manager
-session_manager = SessionManager()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

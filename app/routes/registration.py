@@ -3,12 +3,14 @@
 from fastapi import APIRouter, HTTPException
 import uuid
 from datetime import datetime
+import logging
 
 from app.models.user_models import UserInfo, SessionData
-from app.services.session_manager import SessionManager
+from app.services.session_manager import session_manager
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
-session_manager = SessionManager()
 
 @router.post("/registration/start")
 async def register_user(user_info: UserInfo):
@@ -16,6 +18,7 @@ async def register_user(user_info: UserInfo):
     try:
         # Generate unique session ID
         session_id = str(uuid.uuid4())
+        logger.info(f"Creating new session: {session_id}")
         
         # Create session data
         session_data = SessionData(
@@ -24,11 +27,14 @@ async def register_user(user_info: UserInfo):
             current_page=0,
             responses={},
             completed=False,
-            created_at=datetime.utcnow().isoformat()
+            created_at=datetime.utcnow().isoformat(),
+            started_at=datetime.utcnow(),
+            last_activity=datetime.utcnow()
         )
         
         # Store session
         await session_manager.save_session(session_id, session_data)
+        logger.info(f"Session {session_id} created successfully")
         
         return {
             "success": True,
@@ -37,6 +43,7 @@ async def register_user(user_info: UserInfo):
         }
         
     except Exception as e:
+        logger.error(f"Registration failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Registration failed: {str(e)}"
