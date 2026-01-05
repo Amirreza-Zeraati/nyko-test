@@ -17,7 +17,7 @@ class UserInfo(BaseModel):
     first_name: str = Field(..., min_length=1, max_length=50)
     last_name: str = Field(..., min_length=1, max_length=50)
     age: int = Field(..., ge=13, le=100)  # Adolescents and adults
-    gender: Gender
+    gender: Optional[Gender] = None
     email: Optional[str] = Field(None, pattern=r"^[\w\.-]+@[\w\.-]+\.\w+$")
     
     @field_validator('first_name', 'last_name')
@@ -34,8 +34,9 @@ class SessionData(BaseModel):
     user_info: Optional[UserInfo] = None
     responses: Dict[str, Any] = Field(default_factory=dict)
     current_page: int = 0
-    started_at: datetime = Field(default_factory=datetime.utcnow)
-    last_activity: datetime = Field(default_factory=datetime.utcnow)
+    created_at: Optional[str] = None
+    started_at: Optional[datetime] = None
+    last_activity: Optional[datetime] = None
     completed: bool = False
     
     class Config:
