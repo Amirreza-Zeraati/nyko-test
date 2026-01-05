@@ -1,41 +1,29 @@
 """Evaluation and result generation routes."""
 
-from fastapi import APIRouter, HTTPException, Request
-from fastapi.templating import Jinja2Templates
+from fastapi import APIRouter, HTTPException, Query
 from datetime import datetime
+import logging
 
-from app.services.session_manager import SessionManager
+from app.services.session_manager import session_manager
 from app.services.expert_system import ExpertSystem
 from app.services.scoring import ScoringService
 from app.models.results import EvaluationResult
 
-router = APIRouter()
-templates = Jinja2Templates(directory="app/templates")
-session_manager = SessionManager()
-expert_system = ExpertSystem()
-scoring_service = ScoringService()
+logger = logging.getLogger(__name__)
 
-@router.get("/evaluation/result")
-async def get_result_page(session_id: str, request: Request):
-    """Render result viewing page."""
-    # Validate session
-    session_data = await session_manager.get_session(session_id)
-    if not session_data:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    if not session_data.completed:
-        raise HTTPException(
-            status_code=400,
-            detail="Questionnaire not completed"
-        )
-    
-    return templates.TemplateResponse(
-        "result.html",
-        {"request": request, "session_id": session_id}
-    )
+router = APIRouter()
+
+# Initialize services
+try:
+    expert_system = ExpertSystem()
+    scoring_service = ScoringService()
+    logger.info("Expert system and scoring service initialized")
+except Exception as e:
+    logger.error(f"Failed to initialize evaluation services: {e}", exc_info=True)
+    raise
 
 @router.post("/evaluation/analyze")
-async def analyze_responses(session_id: str) -> EvaluationResult:
+async def analyze_responses(session_id: str = Query(...)) -> EvaluationResult:
     """
     Perform expert system evaluation of user responses.
     
@@ -46,36 +34,48 @@ async def analyze_responses(session_id: str) -> EvaluationResult:
     4. Performs differential diagnosis
     5. Generates clinical reasoning explanation
     6. Provides recommendations
-    
-    The expert system uses:
-    - DSM-5-TR diagnostic criteria
-    - Clinical heuristics from experienced practitioners
-    - Pattern matching against known diagnostic profiles
-    - Contextual and developmental analysis
     """
-    # Validate session
-    session_data = await session_manager.get_session(session_id)
-    if not session_data:
-        raise HTTPException(status_code=404, detail="Session not found")
+    logger.info(f"Starting analysis for session {session_id}")
     
-    if not session_data.completed:
-        raise HTTPException(
-            status_code=400,
-            detail="Questionnaire not completed"
-        )
+    # Validate session
+    try:
+        session_data = await session_manager.get_session(session_id)
+        if not session_data:
+            logger.warning(f"Session not found: {session_id}")
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        logger.info(f"Session found with {len(session_data.responses)} responses")
+        
+        if not session_data.completed:
+            logger.warning(f"Questionnaire not completed for session {session_id}")
+            raise HTTPException(
+                status_code=400,
+                detail="Questionnaire not completed"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving session: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Session error: {str(e)}")
     
     try:
         # Calculate scale scores
+        logger.info("Calculating scale scores")
         scale_scores = scoring_service.calculate_all_scores(
             session_data.responses
         )
+        logger.info(f"Scale scores calculated: ASRS={scale_scores.asrs_part_a}, PHQ9={scale_scores.phq9_total}, GAD7={scale_scores.gad7_total}")
         
         # Run expert system evaluation
+        logger.info("Running expert system evaluation")
+        user_info_dict = session_data.user_info.model_dump() if session_data.user_info else {}
+        
         result = expert_system.evaluate(
             responses=session_data.responses,
             scale_scores=scale_scores,
-            user_info=session_data.user_info
+            user_info=user_info_dict
         )
+        logger.info(f"Evaluation complete: Pattern={result.primary_pattern}")
         
         # Add metadata
         result.session_id = session_id
@@ -84,6 +84,7 @@ async def analyze_responses(session_id: str) -> EvaluationResult:
         return result
         
     except Exception as e:
+        logger.error(f"Evaluation failed for session {session_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Evaluation failed: {str(e)}"
