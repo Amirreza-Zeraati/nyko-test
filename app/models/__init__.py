@@ -2,7 +2,12 @@
 
 from app.models.user_models import UserInfo, SessionData
 from app.models.questionnaire import Question, QuestionnaireResponse, QuestionPage
-from app.models.results import EvaluationResult, DiagnosticProfile, ClinicalReasoning
+from app.models.results import (
+    EvaluationResult, 
+    DiagnosticLikelihood, 
+    ClinicalRecommendation,
+    ScaleScores
+)
 
 __all__ = [
     "UserInfo",
@@ -11,6 +16,7 @@ __all__ = [
     "QuestionnaireResponse",
     "QuestionPage",
     "EvaluationResult",
-    "DiagnosticProfile",
-    "ClinicalReasoning",
+    "DiagnosticLikelihood",
+    "ClinicalRecommendation",
+    "ScaleScores"
 ]
