@@ -6,7 +6,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
 
 from app.routes import registration, questionnaire, evaluation
 from app.services.session_manager import session_manager
@@ -18,24 +17,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application lifespan handler."""
-    # Startup
-    logger.info("Starting ADHD Screening Expert System")
-    await session_manager.initialize()
-    logger.info("Session manager initialized")
-    yield
-    # Shutdown
-    logger.info("Shutting down application")
-    await session_manager.cleanup()
-
 # Initialize FastAPI app
 app = FastAPI(
     title="ADHD Screening Expert System",
     description="Clinical decision-support system for ADHD differential diagnosis",
-    version="1.0.0",
-    lifespan=lifespan
+    version="1.0.0"
 )
 
 # CORS middleware
@@ -55,6 +41,9 @@ async def global_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": f"Internal server error: {str(exc)}"}
     )
+
+# Mount static files FIRST
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Templates
 templates = Jinja2Templates(directory="app/templates")
@@ -103,8 +92,5 @@ async def results_page(request: Request):
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "version": "1.0.0"}
-
-# Mount static files at the end
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 logger.info("Application startup complete")
