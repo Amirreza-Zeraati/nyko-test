@@ -39,7 +39,7 @@ async def analyze_responses(session_id: str = Query(...)) -> EvaluationResult:
     
     # Validate session
     try:
-        session_data = await session_manager.get_session(session_id)
+        session_data = session_manager.get_session(session_id)
         if not session_data:
             logger.warning(f"Session not found: {session_id}")
             raise HTTPException(status_code=404, detail="Session not found")
