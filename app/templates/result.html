@@ -10,6 +10,17 @@
     </div>
 </div>
 <script>
+function formatMarkdown(text) {
+    return text
+        .replace(/## (.*?)\n/g, '<h4>$1</h4>')
+        .replace(/### (.*?)\n/g, '<h5>$1</h5>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/^- (.*?)$/gm, '<li>$1</li>')
+        .replace(/((<li>.*?<\/li>\n?)+)/g, '<ul>$1</ul>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+}
+
 (async()=>{
     const sid=new URLSearchParams(location.search).get('session_id');
     if(!sid){alert('Session not found');location.href='/';return;}
@@ -55,7 +66,7 @@
             </div>
             <div class="result-section">
                 <h3>Clinical Reasoning</h3>
-                <div class="reasoning-content">${d.clinical_reasoning.replace(/\n/g,'<br>')}</div>
+                <div class="reasoning-content"><p>${formatMarkdown(d.clinical_reasoning)}</p></div>
             </div>
             <div class="result-section">
                 <h3>Recommendations</h3>
