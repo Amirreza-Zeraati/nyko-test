@@ -30,7 +30,7 @@ async def get_questionnaire_page(
     
     # Validate session
     try:
-        session_data = await session_manager.get_session(session_id)
+        session_data = session_manager.get_session(session_id)
         if not session_data:
             logger.warning(f"Session not found: {session_id}")
             raise HTTPException(status_code=404, detail="Session not found. Please restart.")
@@ -49,7 +49,7 @@ async def get_questionnaire_page(
         
         # Update session current page
         session_data.current_page = page_number
-        await session_manager.save_session(session_id, session_data)
+        session_manager.save_session(session_id, session_data)
         
         return page
         
@@ -72,14 +72,14 @@ async def submit_questionnaire(
         responses = {}
     
     # Validate session
-    session_data = await session_manager.get_session(session_id)
+    session_data = session_manager.get_session(session_id)
     if not session_data:
         raise HTTPException(status_code=404, detail="Session not found")
     
     # Store all responses
     session_data.responses.update(responses)
     session_data.completed = True
-    await session_manager.save_session(session_id, session_data)
+    session_manager.save_session(session_id, session_data)
     
     logger.info(f"Questionnaire completed for session {session_id}")
     
@@ -91,7 +91,7 @@ async def submit_questionnaire(
 @router.get("/questionnaire/progress")
 async def get_progress(session_id: str = Query(...)):
     """Get questionnaire completion progress."""
-    session_data = await session_manager.get_session(session_id)
+    session_data = session_manager.get_session(session_id)
     if not session_data:
         raise HTTPException(status_code=404, detail="Session not found")
     

@@ -32,8 +32,8 @@ async def register_user(user_info: UserInfo):
             last_activity=datetime.utcnow()
         )
         
-        # Store session
-        await session_manager.save_session(session_id, session_data)
+        # Store session (no await - synchronous now)
+        session_manager.save_session(session_id, session_data)
         logger.info(f"Session {session_id} created successfully")
         
         return {
