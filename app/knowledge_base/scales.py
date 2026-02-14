@@ -85,12 +85,77 @@ class ClinicalScales:
         
         part_b = [
             ScaleQuestion(
-                id=f"asrs_{i}",
-                text=f"ASRS Part B Question {i-6}",
+                id="asrs_7",
+                text="How often do you make careless mistakes when you have to work on a boring or difficult project?",
                 scale_name="ASRS",
                 subscale="Part B"
-            )
-            for i in range(7, 19)
+            ),
+            ScaleQuestion(
+                id="asrs_8",
+                text="How often do you have difficulty keeping your attention when you are doing boring or repetitive work?",
+                scale_name="ASRS",
+                subscale="Part B"
+            ),
+            ScaleQuestion(
+                id="asrs_9",
+                text="How often do you have difficulty concentrating on what people say to you, even when they are speaking to you directly?",
+                scale_name="ASRS",
+                subscale="Part B"
+            ),
+            ScaleQuestion(
+                id="asrs_10",
+                text="How often do you misplace or have difficulty finding things at home or at work?",
+                scale_name="ASRS",
+                subscale="Part B"
+            ),
+            ScaleQuestion(
+                id="asrs_11",
+                text="How often are you distracted by activity or noise around you?",
+                scale_name="ASRS",
+                subscale="Part B"
+            ),
+            ScaleQuestion(
+                id="asrs_12",
+                text="How often do you leave your seat in meetings or other situations in which you are expected to remain seated?",
+                scale_name="ASRS",
+                subscale="Part B"
+            ),
+            ScaleQuestion(
+                id="asrs_13",
+                text="How often do you feel restless or fidgety?",
+                scale_name="ASRS",
+                subscale="Part B"
+            ),
+            ScaleQuestion(
+                id="asrs_14",
+                text="How often do you have difficulty unwinding and relaxing when you have time to yourself?",
+                scale_name="ASRS",
+                subscale="Part B"
+            ),
+            ScaleQuestion(
+                id="asrs_15",
+                text="How often do you find yourself talking too much when you are in social situations?",
+                scale_name="ASRS",
+                subscale="Part B"
+            ),
+            ScaleQuestion(
+                id="asrs_16",
+                text="When you're in a conversation, how often do you find yourself finishing the sentences of the people you are talking to, before they can finish them themselves?",
+                scale_name="ASRS",
+                subscale="Part B"
+            ),
+            ScaleQuestion(
+                id="asrs_17",
+                text="How often do you have difficulty waiting your turn in situations when turn taking is required?",
+                scale_name="ASRS",
+                subscale="Part B"
+            ),
+            ScaleQuestion(
+                id="asrs_18",
+                text="How often do you interrupt others when they are busy?",
+                scale_name="ASRS",
+                subscale="Part B"
+            ),
         ]
         
         return part_a + part_b
